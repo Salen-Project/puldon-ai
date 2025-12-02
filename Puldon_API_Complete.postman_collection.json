@@ -1,0 +1,748 @@
+{
+	"info": {
+		"_postman_id": "puldon-api-2025",
+		"name": "Puldon API - Complete Collection",
+		"description": "Complete API collection for Puldon Financial App\nBase URL: https://151.245.140.91\n\nAuthentication Flow:\n1. Sign Up (first time users)\n2. Request OTP\n3. Verify OTP (get token)\n4. Use token for all other requests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "1. Sign Up (New User)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone_number\": \"+998901234567\",\n  \"full_name\": \"John Doe\",\n  \"gender\": \"male\",\n  \"date_of_birth\": \"1990-01-15\",\n  \"email\": \"john.doe@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/signup",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "signup"]
+						},
+						"description": "Register a new user account"
+					},
+					"response": []
+				},
+				{
+					"name": "2. Request OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone_number\": \"+998901234567\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/signin/request-otp",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "signin", "request-otp"]
+						},
+						"description": "Request OTP code for sign in"
+					},
+					"response": []
+				},
+				{
+					"name": "3. Verify OTP & Get Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Auto-save token to environment",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"auth_token\", jsonData.access_token);",
+									"    console.log(\"Token saved:\", jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone_number\": \"+998901234567\",\n  \"otp\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/signin/verify-otp",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "signin", "verify-otp"]
+						},
+						"description": "Verify OTP and receive JWT access token (auto-saved to {{auth_token}})"
+					},
+					"response": []
+				},
+				{
+					"name": "4. Get User Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/profile",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "profile"]
+						},
+						"description": "Get current user's profile information"
+					},
+					"response": []
+				},
+				{
+					"name": "5. Update Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"full_name\": \"John Updated\",\n  \"email\": \"john.updated@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/profile",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "profile"]
+						},
+						"description": "Update user profile information"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication and user profile endpoints"
+		},
+		{
+			"name": "Chat (AI)",
+			"item": [
+				{
+					"name": "Send Chat Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save thread ID for conversation continuity",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"thread_id\", jsonData.thread_id);",
+									"    console.log(\"Thread ID saved:\", jsonData.thread_id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": \"I just spent $42 on groceries\",\n  \"thread_id\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat",
+							"host": ["{{base_url}}"],
+							"path": ["chat"]
+						},
+						"description": "Send a message to AI assistant (thread_id is auto-saved)"
+					},
+					"response": []
+				},
+				{
+					"name": "Continue Conversation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": \"How much have I spent this month?\",\n  \"thread_id\": \"{{thread_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat",
+							"host": ["{{base_url}}"],
+							"path": ["chat"]
+						},
+						"description": "Continue existing conversation using saved thread_id"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chat History",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/chat/history/{{thread_id}}?limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["chat", "history", "{{thread_id}}"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get chat message history for a thread"
+					},
+					"response": []
+				},
+				{
+					"name": "Clear Chat History",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/chat/clear?thread_id={{thread_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["chat", "clear"],
+							"query": [
+								{
+									"key": "thread_id",
+									"value": "{{thread_id}}"
+								}
+							]
+						},
+						"description": "Clear chat history (optionally for specific thread)"
+					},
+					"response": []
+				}
+			],
+			"description": "AI Chat endpoints"
+		},
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard Data",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["dashboard"]
+						},
+						"description": "Get complete dashboard data including net worth, insights, and spending overview"
+					},
+					"response": []
+				}
+			],
+			"description": "Dashboard data endpoint"
+		},
+		{
+			"name": "Goals",
+			"item": [
+				{
+					"name": "List All Goals",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/goals",
+							"host": ["{{base_url}}"],
+							"path": ["goals"]
+						},
+						"description": "Get all financial goals"
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Goal",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save goal ID",
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.id) {",
+									"        pm.environment.set(\"goal_id\", jsonData.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Emergency Fund\",\n  \"icon\": \"💰\",\n  \"description\": \"Save for emergencies\",\n  \"total_contribution\": 10000,\n  \"current_contribution\": 2000,\n  \"deadline\": \"2025-12-31\",\n  \"color\": \"#4CAF50\",\n  \"monthly_recurring_contribution\": 500\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/goals",
+							"host": ["{{base_url}}"],
+							"path": ["goals"]
+						},
+						"description": "Create a new financial goal"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Goal Details",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/goals/{{goal_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["goals", "{{goal_id}}"]
+						},
+						"description": "Get details of a specific goal"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Goal",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Emergency Fund - Updated\",\n  \"icon\": \"💰\",\n  \"description\": \"Updated description\",\n  \"total_contribution\": 15000,\n  \"current_contribution\": 3000,\n  \"deadline\": \"2025-12-31\",\n  \"color\": \"#4CAF50\",\n  \"monthly_recurring_contribution\": 600\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/goals/{{goal_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["goals", "{{goal_id}}"]
+						},
+						"description": "Update an existing goal"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Goal Progress",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 2500\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/goals/{{goal_id}}/progress",
+							"host": ["{{base_url}}"],
+							"path": ["goals", "{{goal_id}}", "progress"]
+						},
+						"description": "Update current contribution amount for a goal"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Goal",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/goals/{{goal_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["goals", "{{goal_id}}"]
+						},
+						"description": "Delete a goal"
+					},
+					"response": []
+				}
+			],
+			"description": "Financial goals management"
+		},
+		{
+			"name": "Expenses",
+			"item": [
+				{
+					"name": "List Expenses",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/expenses",
+							"host": ["{{base_url}}"],
+							"path": ["expenses"]
+						},
+						"description": "Get all expenses"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Expenses Summary",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/expenses/summary",
+							"host": ["{{base_url}}"],
+							"path": ["expenses", "summary"]
+						},
+						"description": "Get expenses summary and statistics"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Expense",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"category\": \"food\",\n  \"amount\": 42.50,\n  \"description\": \"Groceries at supermarket\",\n  \"date\": \"2025-11-21\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/expenses",
+							"host": ["{{base_url}}"],
+							"path": ["expenses"]
+						},
+						"description": "Add a new expense"
+					},
+					"response": []
+				}
+			],
+			"description": "Expense tracking endpoints"
+		},
+		{
+			"name": "Debts",
+			"item": [
+				{
+					"name": "List Debts",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/debts",
+							"host": ["{{base_url}}"],
+							"path": ["debts"]
+						},
+						"description": "Get all debts"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Debts Summary",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/debts/summary",
+							"host": ["{{base_url}}"],
+							"path": ["debts", "summary"]
+						},
+						"description": "Get debts summary"
+					},
+					"response": []
+				}
+			],
+			"description": "Debt tracking endpoints"
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Check if API is running"
+					},
+					"response": []
+				},
+				{
+					"name": "API Documentation",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/docs",
+							"host": ["{{base_url}}"],
+							"path": ["docs"]
+						},
+						"description": "Access interactive API documentation (Swagger UI)"
+					},
+					"response": []
+				}
+			],
+			"description": "Health and documentation endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://151.245.140.91",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "thread_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "goal_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

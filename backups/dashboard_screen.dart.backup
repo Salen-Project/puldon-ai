@@ -1,0 +1,432 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../providers/financial_data_provider.dart';
+import '../../providers/currency_provider.dart';
+import '../../widgets/cards/glass_container.dart';
+import '../../widgets/cards/glowing_card.dart';
+import '../../widgets/charts/spending_pie_chart.dart';
+import '../../models/transaction.dart';
+import '../../models/financial_goal.dart';
+
+class DashboardScreen extends StatelessWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Consumer<FinancialDataProvider>(
+          builder: (context, financialData, child) {
+            final insights = financialData.insights;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  const _DashboardHeader(),
+                  const SizedBox(height: 30),
+
+                  // Net Worth Card
+                  _NetWorthCard(data: financialData),
+                  const SizedBox(height: 24),
+
+                  // AI Insights
+                  if (insights.isNotEmpty) ...[
+                    Text('AI Insights', style: AppTextStyles.h3)
+                        .animate()
+                        .fadeIn()
+                        .slideX(begin: -0.2),
+                    const SizedBox(height: 12),
+                    _AIInsightCard(insight: insights.first),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Spending Overview Pie Chart
+                  Text('Overview', style: AppTextStyles.h3)
+                      .animate()
+                      .fadeIn()
+                      .slideX(begin: -0.2),
+                  const SizedBox(height: 12),
+                  _SpendingOverview(data: financialData),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+}
+
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final hour = DateTime.now().hour;
+    String greeting;
+    if (hour < 12) {
+      greeting = 'Good Morning';
+    } else if (hour < 17) {
+      greeting = 'Good Afternoon';
+    } else {
+      greeting = 'Good Evening';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          greeting,
+          style: AppTextStyles.h2.copyWith(color: AppColors.textSecondary),
+        ).animate().fadeIn().slideY(begin: -0.2),
+        const SizedBox(height: 4),
+        Text(
+          'Financial Overview',
+          style: AppTextStyles.display2,
+        ).animate().fadeIn(delay: 100.ms).slideY(begin: -0.2),
+      ],
+    );
+  }
+}
+
+class _NetWorthCard extends StatelessWidget {
+  final FinancialDataProvider data;
+
+  const _NetWorthCard({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<CurrencyProvider>(
+      builder: (context, currencyProvider, child) {
+        return Animate(
+          effects: [
+            FadeEffect(delay: 200.ms),
+            ScaleEffect(begin: const Offset(0.8, 0.8)),
+          ],
+          child: GlowingCard(
+            glowColor: AppColors.emerald,
+            animate: false,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Text(
+                  'Total Net Worth',
+                  style: AppTextStyles.h4.copyWith(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  currencyProvider.formatAmount(data.netWorth),
+                  style: AppTextStyles.numberDisplay,
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentCyan.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.accentCyan.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.accentCyan.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.account_balance_wallet_outlined,
+                              color: AppColors.accentCyan,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Wallet Money',
+                                style: AppTextStyles.bodySmall,
+                              ),
+                              Text(
+                                currencyProvider.formatAmount(data.walletMoney),
+                                style: AppTextStyles.h4,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AIInsightCard extends StatelessWidget {
+  final dynamic insight;
+
+  const _AIInsightCard({required this.insight});
+
+  @override
+  Widget build(BuildContext context) {
+    IconData icon;
+    Color color;
+
+    switch (insight.type.toString()) {
+      case 'InsightType.warning':
+        icon = Icons.warning_amber_rounded;
+        color = AppColors.warning;
+        break;
+      case 'InsightType.achievement':
+        icon = Icons.star_rounded;
+        color = AppColors.emerald;
+        break;
+      case 'InsightType.suggestion':
+        icon = Icons.lightbulb_outline_rounded;
+        color = AppColors.accentCyan;
+        break;
+      default:
+        icon = Icons.info_outline_rounded;
+        color = AppColors.info;
+    }
+
+    return GlassContainer(
+      color: color.withValues(alpha: 0.1),
+      border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              insight.message,
+              style: AppTextStyles.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2);
+  }
+}
+
+class _SpendingOverview extends StatefulWidget {
+  final FinancialDataProvider data;
+
+  const _SpendingOverview({required this.data});
+
+  @override
+  State<_SpendingOverview> createState() => _SpendingOverviewState();
+}
+
+class _SpendingOverviewState extends State<_SpendingOverview> {
+  String _selectedPeriod = '1 Month';
+  final List<String> _periods = ['1 Month', '6 Months', '1 Year', 'Max'];
+
+  @override
+  Widget build(BuildContext context) {
+    final startDate = _getPeriodStartDate();
+    final transactions = widget.data.transactions;
+    bool withinPeriod(DateTime date) =>
+        startDate == null || !date.isBefore(startDate);
+
+    final filteredExpenses = transactions
+        .where(
+            (t) => t.type == TransactionType.expense && withinPeriod(t.date))
+        .toList();
+    final filteredIncomes = transactions
+        .where((t) => t.type == TransactionType.income && withinPeriod(t.date))
+        .toList();
+
+    Map<String, double> categorySpending;
+    if (filteredExpenses.isEmpty) {
+      categorySpending =
+          Map<String, double>.from(widget.data.spendingByCategory);
+    } else {
+      categorySpending = _aggregateExpenses(filteredExpenses);
+    }
+
+    final taxes = filteredIncomes.fold<double>(
+          0,
+          (sum, tx) => sum + tx.amount,
+        ) *
+        0.15;
+    if (taxes > 0) {
+      categorySpending['taxes'] =
+          (categorySpending['taxes'] ?? 0) + taxes;
+    }
+
+    final monthsFactor = _getMonthsFactor(startDate, transactions);
+    final subscriptionTotal = widget.data.subscriptions
+        .where((s) => s.isActive)
+        .fold<double>(0, (sum, sub) => sum + sub.monthlyAmount * monthsFactor);
+    if (subscriptionTotal > 0) {
+      categorySpending['subscriptions'] =
+          (categorySpending['subscriptions'] ?? 0) + subscriptionTotal;
+    }
+
+    final goalsForChart = _buildGoalSlices(startDate, filteredExpenses);
+    
+    return Animate(
+      effects: [
+        FadeEffect(delay: 400.ms),
+        ScaleEffect(begin: const Offset(0.8, 0.8)),
+      ],
+      child: GlowingCard(
+        glowColor: AppColors.purple,
+        animate: false,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            // Time period selector
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Spending Overview',
+                  style: AppTextStyles.h4,
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.accentCyan.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedPeriod,
+                      icon: Icon(
+                        Icons.arrow_drop_down,
+                        color: AppColors.accentCyan,
+                        size: 20,
+                      ),
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.accentCyan,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      dropdownColor: AppColors.primaryLight,
+                      items: _periods.map((String period) {
+                        return DropdownMenuItem<String>(
+                          value: period,
+                          child: Text(period),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() => _selectedPeriod = newValue);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            SpendingPieChart(
+              categorySpending: categorySpending,
+              goals: goalsForChart.isEmpty ? null : goalsForChart,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  DateTime? _getPeriodStartDate() {
+    final now = DateTime.now();
+    switch (_selectedPeriod) {
+      case '1 Month':
+        return now.subtract(const Duration(days: 30));
+      case '6 Months':
+        return now.subtract(const Duration(days: 182));
+      case '1 Year':
+        return now.subtract(const Duration(days: 365));
+      default:
+        return null;
+    }
+  }
+
+  int _getMonthsFactor(DateTime? startDate, List<Transaction> transactions) {
+    switch (_selectedPeriod) {
+      case '1 Month':
+        return 1;
+      case '6 Months':
+        return 6;
+      case '1 Year':
+        return 12;
+      default:
+        if (transactions.isEmpty) return 1;
+        final earliest = transactions
+            .reduce((a, b) => a.date.isBefore(b.date) ? a : b)
+            .date;
+        final now = DateTime.now();
+        int months = (now.year - earliest.year) * 12 + now.month - earliest.month;
+        return months <= 0 ? 1 : months;
+    }
+  }
+
+  Map<String, double> _aggregateExpenses(List<Transaction> expenses) {
+    final Map<String, double> result = {};
+    for (final tx in expenses) {
+      final categoryName = tx.category.toString().split('.').last;
+      result[categoryName] = (result[categoryName] ?? 0) + tx.amount;
+    }
+    return result;
+  }
+
+  List<FinancialGoal> _buildGoalSlices(
+      DateTime? startDate, List<Transaction> expenses) {
+    // For Max period, use actual goal balances
+    if (startDate == null) {
+      return widget.data.goals;
+    }
+
+    // Calculate contributions only from transactions in the selected period
+    final Map<String, double> contributions = {};
+    for (final tx in expenses) {
+      if (tx.title.startsWith('Saved to ')) {
+        final name = tx.title.substring('Saved to '.length).trim();
+        contributions[name] = (contributions[name] ?? 0) + tx.amount;
+      }
+    }
+
+    // Only show goals that had contributions in this period
+    // Don't fallback to total balances
+    return widget.data.goals
+        .map((goal) {
+          final amount = contributions[goal.name];
+          if (amount == null || amount <= 0) return null;
+          return goal.copyWith(currentAmount: amount);
+        })
+        .whereType<FinancialGoal>()
+        .toList();
+  }
+}
